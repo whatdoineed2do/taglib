@@ -1,5 +1,16 @@
 # TagLib
 
+from [taglib/taglib](https://github.com/taglib/taglib)
+
+
+This is the [whatdoineed2do](https://github/com/whatdoineed2d/taglib) fork of the [taglib 1.11.1 upstream master](https://github.com/taglib/taglib)
+
+This repo contains these fixes of interest that are pending merge into upstream
+* mp4 `set{Track,Year}()` bug fix clearing values (https://github.com/taglib/taglib/pull/912)
+* long standing mp3 stripping bug (https://github.com/taglib/taglib/pull/914)
+
+---
+
 [![Build Status](https://travis-ci.org/taglib/taglib.svg?branch=master)](https://travis-ci.org/taglib/taglib)
 
 ### TagLib Audio Metadata Library
