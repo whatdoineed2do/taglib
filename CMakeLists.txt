@@ -1,10 +1,6 @@
-cmake_minimum_required(VERSION 2.8.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 project(taglib)
-
-if(NOT ${CMAKE_VERSION} VERSION_LESS 2.8.12)
-  cmake_policy(SET CMP0022 OLD)
-endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
@@ -103,6 +99,10 @@ math(EXPR TAGLIB_SOVERSION_MINOR "${TAGLIB_SOVERSION_AGE}")
 math(EXPR TAGLIB_SOVERSION_PATCH "${TAGLIB_SOVERSION_REVISION}")
 
 include(ConfigureChecks.cmake)
+
+if(${ZLIB_FOUND})
+  set(ZLIB_LIBRARIES_FLAGS -lz)
+endif()
 
 if(NOT WIN32)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/taglib-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/taglib-config" @ONLY)

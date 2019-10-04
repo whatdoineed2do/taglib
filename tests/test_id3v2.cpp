@@ -56,8 +56,8 @@ class PublicFrame : public ID3v2::Frame
   public:
     PublicFrame() : ID3v2::Frame(ByteVector("XXXX\0\0\0\0\0\0", 10)) {}
     String readStringField(const ByteVector &data, String::Type encoding,
-                           int *positon = 0)
-      { return ID3v2::Frame::readStringField(data, encoding, positon); }
+                           int *position = 0)
+      { return ID3v2::Frame::readStringField(data, encoding, position); }
     virtual String toString() const { return String(); }
     virtual void parseFields(const ByteVector &) {}
     virtual ByteVector renderFields() const { return ByteVector(); }
@@ -145,7 +145,7 @@ public:
 
     MPEG::File file(newname.c_str());
     file.ID3v2Tag(true)->addFrame(f);
-    file.save(MPEG::File::ID3v2, true, 3);
+    file.save(MPEG::File::ID3v2, File::StripOthers, ID3v2::v3);
     CPPUNIT_ASSERT_EQUAL(true, file.hasID3v2Tag());
 
     ByteVector data = f->render();
@@ -166,7 +166,7 @@ public:
 
     MPEG::File file(copy.fileName().c_str());
     file.ID3v2Tag(true)->addFrame(f);
-    file.save(MPEG::File::ID3v2, true, 3);
+    file.save(MPEG::File::ID3v2, File::StripOthers, ID3v2::v3);
     CPPUNIT_ASSERT(file.hasID3v2Tag());
 
     ByteVector data = f->render();
@@ -251,8 +251,10 @@ public:
                                  "\x01"
                                  "d\x00"
                                  "\x00", 14);
+    ID3v2::Header header;
+    header.setMajorVersion(2);
     ID3v2::AttachedPictureFrame *frame =
-        dynamic_cast<TagLib::ID3v2::AttachedPictureFrame*>(factory->createFrame(data, (unsigned int)2));
+      dynamic_cast<TagLib::ID3v2::AttachedPictureFrame *>(factory->createFrame(data, &header));
 
     CPPUNIT_ASSERT(frame);
     CPPUNIT_ASSERT_EQUAL(String("image/jpeg"), frame->mimeType());
@@ -272,8 +274,10 @@ public:
                                  "\x01"
                                  "d\x00"
                                  "\x00", 14);
+    ID3v2::Header header;
+    header.setMajorVersion(2);
     ID3v2::UnknownFrame *frame =
-        dynamic_cast<TagLib::ID3v2::UnknownFrame*>(factory->createFrame(data, (unsigned int)2));
+      dynamic_cast<TagLib::ID3v2::UnknownFrame*>(factory->createFrame(data, &header));
 
     CPPUNIT_ASSERT(frame);
 
@@ -665,8 +669,10 @@ public:
                                  "\x00\x00"             // Frame flags
                                  "\x00"                 // Encoding
                                  "(22)Death Metal", 26);     // Text
+    ID3v2::Header header;
+    header.setMajorVersion(3);
     ID3v2::TextIdentificationFrame *frame =
-        dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, (unsigned int)3));
+      dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, &header));
     CPPUNIT_ASSERT_EQUAL((unsigned int)1, frame->fieldList().size());
     CPPUNIT_ASSERT_EQUAL(String("Death Metal"), frame->fieldList()[0]);
 
@@ -684,8 +690,10 @@ public:
                                  "\x00\x00"             // Frame flags
                                  "\x00"                 // Encoding
                                  "(4)Eurodisco", 23);   // Text
+    ID3v2::Header header;
+    header.setMajorVersion(3);
     ID3v2::TextIdentificationFrame *frame =
-        dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, (unsigned int)3));
+      dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, &header));
     CPPUNIT_ASSERT_EQUAL((unsigned int)2, frame->fieldList().size());
     CPPUNIT_ASSERT_EQUAL(String("4"), frame->fieldList()[0]);
     CPPUNIT_ASSERT_EQUAL(String("Eurodisco"), frame->fieldList()[1]);
@@ -703,8 +711,9 @@ public:
                                  "\x00\x00"               // Frame flags
                                  "\0"                   // Encoding
                                  "14\0Eurodisco", 23);     // Text
+    ID3v2::Header header;
     ID3v2::TextIdentificationFrame *frame =
-        dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, (unsigned int)4));
+      dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, &header));
     CPPUNIT_ASSERT_EQUAL((unsigned int)2, frame->fieldList().size());
     CPPUNIT_ASSERT_EQUAL(String("14"), frame->fieldList()[0]);
     CPPUNIT_ASSERT_EQUAL(String("Eurodisco"), frame->fieldList()[1]);
@@ -756,7 +765,7 @@ public:
       foo.ID3v2Tag()->addFrame(new ID3v2::TextIdentificationFrame("TSOT", String::Latin1));
       foo.ID3v2Tag()->addFrame(new ID3v2::TextIdentificationFrame("TSST", String::Latin1));
       foo.ID3v2Tag()->addFrame(new ID3v2::TextIdentificationFrame("TSOP", String::Latin1));
-      foo.save(MPEG::File::AllTags, true, 3);
+      foo.save(MPEG::File::AllTags, File::StripOthers, ID3v2::v3);
     }
     {
       MPEG::File bar(newname.c_str());
@@ -954,10 +963,13 @@ public:
     CPPUNIT_ASSERT_EQUAL(frameDataMvin, frameMvin->render());
 
     ID3v2::FrameFactory *factory = ID3v2::FrameFactory::instance();
+    ID3v2::Header header;
     ID3v2::TextIdentificationFrame *parsedFrameMvnm =
-        dynamic_cast<ID3v2::TextIdentificationFrame *>(factory->createFrame(frameDataMvnm));
+      dynamic_cast<ID3v2::TextIdentificationFrame *>(
+        factory->createFrame(frameDataMvnm, &header));
     ID3v2::TextIdentificationFrame *parsedFrameMvin =
-        dynamic_cast<ID3v2::TextIdentificationFrame *>(factory->createFrame(frameDataMvin));
+      dynamic_cast<ID3v2::TextIdentificationFrame *>(
+        factory->createFrame(frameDataMvin, &header));
     CPPUNIT_ASSERT(parsedFrameMvnm);
     CPPUNIT_ASSERT(parsedFrameMvin);
     CPPUNIT_ASSERT_EQUAL(String("Movement Name"), parsedFrameMvnm->toString());
@@ -986,8 +998,10 @@ public:
     CPPUNIT_ASSERT_EQUAL(frameDataGrp1, frameGrp1->render());
 
     ID3v2::FrameFactory *factory = ID3v2::FrameFactory::instance();
+    ID3v2::Header header;
     ID3v2::TextIdentificationFrame *parsedFrameGrp1 =
-        dynamic_cast<ID3v2::TextIdentificationFrame *>(factory->createFrame(frameDataGrp1));
+      dynamic_cast<ID3v2::TextIdentificationFrame *>(
+        factory->createFrame(frameDataGrp1, &header));
     CPPUNIT_ASSERT(parsedFrameGrp1);
     CPPUNIT_ASSERT_EQUAL(String("Grouping"), parsedFrameGrp1->toString());
 
@@ -1029,7 +1043,7 @@ public:
       MPEG::File bar(newname.c_str());
       bar.ID3v2Tag()->removeFrames("TPE1");
       // Should strip ID3v1 here and not add old values to ID3v2 again
-      bar.save(MPEG::File::ID3v2, true);
+      bar.save(MPEG::File::ID3v2, File::StripOthers);
     }
 
     MPEG::File f(newname.c_str());
@@ -1210,14 +1224,14 @@ public:
     {
       MPEG::File f(newname.c_str());
       f.ID3v2Tag()->setTitle(longText(64 * 1024));
-      f.save(MPEG::File::ID3v2, true);
+      f.save(MPEG::File::ID3v2, File::StripOthers);
     }
     {
       MPEG::File f(newname.c_str());
       CPPUNIT_ASSERT(f.hasID3v2Tag());
       CPPUNIT_ASSERT_EQUAL(74789L, f.length());
       f.ID3v2Tag()->setTitle("ABCDEFGHIJ");
-      f.save(MPEG::File::ID3v2, true);
+      f.save(MPEG::File::ID3v2, File::StripOthers);
     }
     {
       MPEG::File f(newname.c_str());
@@ -1275,7 +1289,7 @@ public:
       CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
 
       f.ID3v2Tag()->setArtist("Artist A");
-      f.save(MPEG::File::ID3v2, true);
+      f.save(MPEG::File::ID3v2, File::StripOthers);
     }
     {
       MPEG::File f(copy.fileName().c_str());
