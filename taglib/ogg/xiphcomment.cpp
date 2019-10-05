@@ -40,6 +40,19 @@ namespace
   typedef List<FLAC::Picture *> PictureList;
   typedef PictureList::Iterator PictureIterator;
   typedef PictureList::Iterator PictureConstIterator;
+
+  /* returns the tag value for the given map[key] - however it ensure that map
+  * entry is not created if it doesn't exist
+   */
+  String xiphTag(const Ogg::FieldListMap& map, const char* key)
+  {
+    Ogg::FieldListMap::ConstIterator i = map.find(key);
+    if (i == map.end())
+      return String();
+    if(i->second.isEmpty())
+      return String();
+    return i->second.toString();
+  }
 }
 
 class Ogg::XiphComment::XiphCommentPrivate
@@ -80,35 +93,31 @@ Ogg::XiphComment::~XiphComment()
 
 String Ogg::XiphComment::title() const
 {
-  if(d->fieldListMap["TITLE"].isEmpty())
-    return String();
-  return d->fieldListMap["TITLE"].toString();
+  return xiphTag(d->fieldListMap, "TITLE");
 }
 
 String Ogg::XiphComment::artist() const
 {
-  if(d->fieldListMap["ARTIST"].isEmpty())
-    return String();
-  return d->fieldListMap["ARTIST"].toString();
+  return xiphTag(d->fieldListMap, "ARTIST");
 }
 
 String Ogg::XiphComment::album() const
 {
-  if(d->fieldListMap["ALBUM"].isEmpty())
-    return String();
-  return d->fieldListMap["ALBUM"].toString();
+  return xiphTag(d->fieldListMap, "ALBUM");
 }
 
 String Ogg::XiphComment::comment() const
 {
-  if(!d->fieldListMap["DESCRIPTION"].isEmpty()) {
+  String desc = xiphTag(d->fieldListMap, "DESCRIPTION");
+  if(!desc.isEmpty()) {
     d->commentField = "DESCRIPTION";
-    return d->fieldListMap["DESCRIPTION"].toString();
+    return desc;
   }
 
-  if(!d->fieldListMap["COMMENT"].isEmpty()) {
+  String comment = xiphTag(d->fieldListMap, "COMMENT");
+  if (!comment.isEmpty()) {
     d->commentField = "COMMENT";
-    return d->fieldListMap["COMMENT"].toString();
+    return comment;
   }
 
   return String();
@@ -116,26 +125,28 @@ String Ogg::XiphComment::comment() const
 
 String Ogg::XiphComment::genre() const
 {
-  if(d->fieldListMap["GENRE"].isEmpty())
-    return String();
-  return d->fieldListMap["GENRE"].toString();
+  return xiphTag(d->fieldListMap, "GENRE");
 }
 
 unsigned int Ogg::XiphComment::year() const
 {
-  if(!d->fieldListMap["DATE"].isEmpty())
-    return d->fieldListMap["DATE"].front().toInt();
-  if(!d->fieldListMap["YEAR"].isEmpty())
-    return d->fieldListMap["YEAR"].front().toInt();
+  FieldListMap::ConstIterator i = d->fieldListMap.find("DATE");
+  if (i != d->fieldListMap.end() && !i->second.isEmpty())
+    return i->second.front().toInt();
+  i = d->fieldListMap.find("YEAR");
+  if (i != d->fieldListMap.end() && !i->second.isEmpty())
+    return i->second.front().toInt();
   return 0;
 }
 
 unsigned int Ogg::XiphComment::track() const
 {
-  if(!d->fieldListMap["TRACKNUMBER"].isEmpty())
-    return d->fieldListMap["TRACKNUMBER"].front().toInt();
-  if(!d->fieldListMap["TRACKNUM"].isEmpty())
-    return d->fieldListMap["TRACKNUM"].front().toInt();
+  FieldListMap::ConstIterator i = d->fieldListMap.find("TRACKNUMBER");
+  if (i != d->fieldListMap.end() && !i->second.isEmpty())
+    return i->second.front().toInt();
+  i = d->fieldListMap.find("TRACKNUM");
+  if (i != d->fieldListMap.end() && !i->second.isEmpty())
+    return i->second.front().toInt();
   return 0;
 }
 
@@ -157,7 +168,8 @@ void Ogg::XiphComment::setAlbum(const String &s)
 void Ogg::XiphComment::setComment(const String &s)
 {
   if(d->commentField.isEmpty()) {
-    if(!d->fieldListMap["DESCRIPTION"].isEmpty())
+    FieldListMap::ConstIterator i = d->fieldListMap.find("DESCRIPTION");
+    if (i != d->fieldListMap.end() && !i->second.isEmpty())
       d->commentField = "DESCRIPTION";
     else
       d->commentField = "COMMENT";
